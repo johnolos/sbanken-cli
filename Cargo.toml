@@ -1,0 +1,16 @@
+[package]
+name = "sbanken-cli"
+version = "0.1.0"
+authors = ["John-Olav Storvold <johnolav.storvold@gmail.com>"]
+
+[dependencies]
+clap = '*'
+reqwest = '*'
+hyper = '*'
+serde = '*'
+serde_derive = '*'
+serde_json = '*'
+url = '*'
+termion = '*'
+chrono = { version = '*', features = ["serde"] }
+time = '*'
