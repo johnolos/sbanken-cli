@@ -72,3 +72,19 @@ function sbanken-cli
     envchain sbanken sbanken-cli $argv
 end
 ```
+
+##### Moving forward
+In time there might be a interactive mode, but for now you can very much tailor one for your use-case:
+
+For example:
+```fish
+function transfer
+	set from_account (sbanken-cli account -l  | fzf --prompt="From account: " | awk '{print $(NF)}' | sed 's/\]//g')
+	sbanken-cli account -l | fzf -1 -q "$from_account" | xargs echo "From account: "
+	set to_account (sbanken-cli account -l  | fzf --prompt="To account: " | awk '{print $(NF)}' | sed 's/\]//g')
+	sbanken-cli account -l | fzf -1 -q "$to_account" | xargs echo "To account: "
+	read --prompt "echo 'Amount: '" -l amount
+	read --prompt "echo 'Message: '" -l message
+	sbanken-cli transfer -f "$from_account" -t "$to_account" -a "$amount" -m "$message"
+end
+```
