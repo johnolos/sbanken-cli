@@ -13,7 +13,7 @@ impl CustomersAPI {
             credentials.customer_id
         )).unwrap();
 
-        let mut response: Response = Authorize::get_request(url, credentials, None);
+        let mut response: Response = Authorize::get_request(url, credentials, None)?;
 
         return response.json::<Customer>();
     }

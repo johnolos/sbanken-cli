@@ -2,7 +2,7 @@ use clap::{App, Arg, SubCommand};
 
 pub fn build_cli() -> App<'static, 'static> {
     App::new("sbanken-cli")
-        .version("0.1")
+        .version("0.2.0")
         .about("Your personal bank right in your favorite terminal")
         .author("John-Olav Storvold")
         .arg(

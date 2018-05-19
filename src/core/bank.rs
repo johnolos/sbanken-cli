@@ -15,7 +15,7 @@ impl BankAPI {
             credentials.customer_id
         )).unwrap();
 
-        let mut response: Response = Authorize::get_request(url, credentials, None);
+        let mut response: Response = Authorize::get_request(url, credentials, None)?;
 
         return response.json::<Accounts>();
     }
@@ -26,7 +26,7 @@ impl BankAPI {
             credentials.customer_id, account
         )).unwrap();
 
-        let mut response: Response = Authorize::get_request(url, credentials, None);
+        let mut response: Response = Authorize::get_request(url, credentials, None)?;
 
         return response.json::<Account>();
     }
@@ -54,7 +54,7 @@ impl BankAPI {
             end_date.to_rfc3339_opts(SecondsFormat::Secs, true),
         );
 
-        let mut response: Response = Authorize::get_request(url, credentials, Some(params));
+        let mut response: Response = Authorize::get_request(url, credentials, Some(params))?;
 
         return response.json::<Transactions>();
     }
@@ -68,7 +68,7 @@ impl BankAPI {
             credentials.customer_id,
         )).unwrap();
 
-        let mut response: Response = Authorize::post_request(url, credentials, &transfer);
+        let mut response: Response = Authorize::post_request(url, credentials, &transfer)?;
 
         return response.json::<TransferResponse>();
     }
