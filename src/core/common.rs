@@ -1,7 +1,7 @@
 use core::credentials::Credentials;
 use core::entities::AccessToken;
 use hyper::header::{Accept, Authorization, Basic, Bearer, ContentType, Headers, UserAgent};
-use reqwest::{Client, Response, Error};
+use reqwest::{Client, Error, Response};
 use serde::Serialize;
 use serde_json;
 use std::collections::HashMap;
@@ -59,7 +59,11 @@ impl Authorize {
         return client.get(url).send();
     }
 
-    pub fn post_request(url: Url, credentials: Credentials, object: impl Serialize) -> Result<Response, Error> {
+    pub fn post_request(
+        url: Url,
+        credentials: Credentials,
+        object: impl Serialize,
+    ) -> Result<Response, Error> {
         let token: AccessToken = Authorize::get_access_token(credentials)?;
         let headers = Authorize::construct_headers(token.access_token);
 
