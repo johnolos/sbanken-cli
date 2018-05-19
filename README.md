@@ -11,7 +11,7 @@ Link to Sbanken's swagger documentation:
 Feedback and PRs are welcomed.
 
 ## Requirements
-Requires Rust 1.26.
+Requires Rust 1.26 or newer.
 
 To build from source and installing, you can head over to [rustup](https://rustup.rs/) to get started.
 
@@ -23,10 +23,9 @@ $ mv ./target/release/sbanken-cli /usr/local/bin
 ```
 
 ## Environment variables
-`SBANKEN_CLIENT_ID`, `SBANKEN_SECRET` and `CUSTOMER_ID` are required environment-variables.
+`SBANKEN_CLIENT_ID`, `SBANKEN_SECRET` and `SBANKEN_CUSTOMER_ID` are required environment-variables.
 
-`SBANKEN_CLIENT_ID` and `SBANKEN_SECRET` are provided through the developer-pages on [https://sbanken.no/](https://sbanken.no/).
-Navigate through `Mine instillinger > Sbanken Beta > Utviklerportalen`.
+`SBANKEN_CLIENT_ID` and `SBANKEN_SECRET` are provided through the developer-pages on [https://sbanken.no/](https://sbanken.no/). Navigate through `Mine instillinger > Sbanken Beta > Utviklerportalen`. `SBANKEN_CUSTOMER_ID` is your social security number.
 
 Set `SBANKEN_COLOR=1` if you want colored output.
 
@@ -45,18 +44,18 @@ $ sbanken-cli generate-fish-completions > ~/.config/fish/completions/sbanken-cli
 
 ##### Use envchain to manage your secrets for additional security (optional)
 An optional opinionated way to store your credentials could be using [envchain](https://github.com/sorah/envchain)
-for added security. How you store your secrets are entirely up to you. Storing your credentials in `.bashrc` or similar is a-okey.
+for added security. How you store your secrets are entirely up to you. Storing your credentials i.e. `.bashrc` is a-okey.
 
-Once installed setup envchain, do the following:
+Once installed you have installed envchain, do the following:
 
 ```bash
-$ envchain --set sbanken SBANKEN_CLIENT_ID SBANKEN_SECRET CUSTOMER_ID SBANKEN_COLOR
+$ envchain --set sbanken SBANKEN_CLIENT_ID SBANKEN_SECRET SBANKEN_CUSTOMER_ID SBANKEN_COLOR
 ```
 Using sbanken-cli with envchain will then become:
 ```bash
 $ envchain sbanken sbanken-cli transactions -a <account> -f 2017-10-15 -t 2017-10-20 -l 30
 ```
-Using envchain, will be then prompt for your credentials based on your configuration and preference.
+Using envchain, will be prompted for your credentials based on your configuration and preference.
 
 If that's a little tedious for your taste, you can always make it convenient:
 
