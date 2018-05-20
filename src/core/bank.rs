@@ -9,7 +9,7 @@ use url::Url;
 pub struct BankAPI {}
 
 impl BankAPI {
-    pub fn get_accounts(credentials: Credentials) -> Result<Accounts, Error> {
+    pub fn get_accounts(credentials: &Credentials) -> Result<Accounts, Error> {
         let url = Url::parse(&format!(
             "https://api.sbanken.no/bank/api/v1/accounts/{}",
             credentials.customer_id
@@ -20,7 +20,7 @@ impl BankAPI {
         return response.json::<Accounts>();
     }
 
-    pub fn get_account(credentials: Credentials, account: &str) -> Result<Account, Error> {
+    pub fn get_account(credentials: &Credentials, account: &str) -> Result<Account, Error> {
         let url = Url::parse(&format!(
             "https://api.sbanken.no/bank/api/v1/accounts/{}/{}",
             credentials.customer_id, account
@@ -32,7 +32,7 @@ impl BankAPI {
     }
 
     pub fn get_transactions(
-        credentials: Credentials,
+        credentials: &Credentials,
         account: &str,
         length: i32,
         start_date: DateTime<Utc>,
@@ -60,7 +60,7 @@ impl BankAPI {
     }
 
     pub fn post_transfer(
-        credentials: Credentials,
+        credentials: &Credentials,
         transfer: TransferRequest,
     ) -> Result<TransferResponse, Error> {
         let url = Url::parse(&format!(

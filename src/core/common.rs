@@ -12,7 +12,7 @@ pub trait Authorize {}
 impl Authorize {
     const IDENTITY_SERVER_URL: &'static str = "https://api.sbanken.no/identityserver/connect/token";
 
-    fn get_access_token(credentials: Credentials) -> Result<AccessToken, Error> {
+    fn get_access_token(credentials: &Credentials) -> Result<AccessToken, Error> {
         let mut headers = Headers::new();
         headers.set(UserAgent::new("sbanken-cli/0.2.0"));
         headers.set(Accept::json());
@@ -43,7 +43,7 @@ impl Authorize {
 
     pub fn get_request(
         url: Url,
-        credentials: Credentials,
+        credentials: &Credentials,
         params: Option<HashMap<&str, String>>,
     ) -> Result<Response, Error> {
         let token: AccessToken = Authorize::get_access_token(credentials)?;
@@ -61,7 +61,7 @@ impl Authorize {
 
     pub fn post_request(
         url: Url,
-        credentials: Credentials,
+        credentials: &Credentials,
         object: impl Serialize,
     ) -> Result<Response, Error> {
         let token: AccessToken = Authorize::get_access_token(credentials)?;

@@ -31,17 +31,14 @@ fn main() -> Result<(), CliError> {
 
     if matches.is_present("generate-bash-completions") {
         cli::build_cli().gen_completions_to("sbanken-cli", Shell::Bash, &mut std::io::stdout());
-        return Ok(());
     }
 
     if matches.is_present("generate-zsh-completions") {
         cli::build_cli().gen_completions_to("sbanken-cli", Shell::Zsh, &mut std::io::stdout());
-        return Ok(());
     }
 
     if matches.is_present("generate-fish-completions") {
         cli::build_cli().gen_completions_to("sbanken-cli", Shell::Fish, &mut std::io::stdout());
-        return Ok(());
     }
 
     if matches.is_present("generate-powershell-completions") {
@@ -50,7 +47,6 @@ fn main() -> Result<(), CliError> {
             Shell::PowerShell,
             &mut std::io::stdout(),
         );
-        return Ok(());
     }
 
     let color_env: bool = match env::var("SBANKEN_COLOR") {
@@ -84,7 +80,7 @@ fn main() -> Result<(), CliError> {
         }
     };
 
-    let credentials = Credentials::new(secret, client_id, customer_id);
+    let ref credentials = Credentials::new(secret, client_id, customer_id);
 
     if let Some(matches) = matches.subcommand_matches("account") {
         if let Some(account_number) = matches.value_of("account") {
@@ -118,8 +114,6 @@ fn main() -> Result<(), CliError> {
                 println!("{:}", response);
             }
         }
-
-        return Ok(());
     }
 
     if let Some(_matches) = matches.subcommand_matches("customer") {
@@ -129,8 +123,6 @@ fn main() -> Result<(), CliError> {
         };
 
         println!("{:}", customer);
-
-        return Ok(());
     }
 
     if let Some(matches) = matches.subcommand_matches("transaction") {
@@ -191,8 +183,6 @@ fn main() -> Result<(), CliError> {
             };
 
         println!("{:}", transactions);
-
-        return Ok(());
     }
 
     if let Some(matches) = matches.subcommand_matches("transfer") {
@@ -256,9 +246,7 @@ fn main() -> Result<(), CliError> {
                 println!("Your transfer was successfully executed.")
             }
         }
-
-        return Ok(());
     }
 
-    return Ok(());
+    Ok(())
 }

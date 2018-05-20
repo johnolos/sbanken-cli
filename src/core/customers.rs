@@ -7,7 +7,7 @@ use url::Url;
 pub struct CustomersAPI {}
 
 impl CustomersAPI {
-    pub fn get_customer(credentials: Credentials) -> Result<Customer, Error> {
+    pub fn get_customer(credentials: &Credentials) -> Result<Customer, Error> {
         let url = Url::parse(&format!(
             "https://api.sbanken.no/customers/api/v1/customers/{}",
             credentials.customer_id
