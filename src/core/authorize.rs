@@ -6,20 +6,30 @@ use serde::Serialize;
 use serde_json;
 use std::collections::HashMap;
 use url::Url;
+use url::form_urlencoded::byte_serialize;
 
-pub trait Authorize {}
+pub struct Authorize<'a> {
+    pub credentials: &'a Credentials,
+}
 
-impl Authorize {
+impl<'a> Authorize<'a> {
     const IDENTITY_SERVER_URL: &'static str = "https://api.sbanken.no/identityserver/connect/token";
 
-    fn get_access_token(credentials: &Credentials) -> Result<AccessToken, Error> {
+    pub fn new(credentials: &'a Credentials) -> Authorize {
+        Authorize { credentials }
+    }
+
+    fn get_access_token(&self) -> Result<AccessToken, Error> {
+        let username: String = byte_serialize(self.credentials.client_id.as_bytes()).collect();
+        let password: Option<String> = Some(byte_serialize(self.credentials.secret.as_bytes()).collect());
+
         let mut headers = Headers::new();
-        headers.set(UserAgent::new("sbanken-cli/0.2.0"));
+        headers.set(UserAgent::new("sbanken-cli/0.3.0"));
         headers.set(Accept::json());
         headers.set(ContentType::form_url_encoded());
         headers.set(Authorization(Basic {
-            username: credentials.client_id.to_string(),
-            password: Some(credentials.secret.to_string()),
+            username,
+            password
         }));
 
         let client = Client::builder().default_headers(headers).build().unwrap();
@@ -31,24 +41,25 @@ impl Authorize {
         return response.json::<AccessToken>();
     }
 
-    fn construct_headers(token: String) -> Headers {
+    fn construct_headers(&self, token: String) -> Headers {
         let mut headers = Headers::new();
 
-        headers.set(UserAgent::new("sbanken-cli/0.2.0"));
+        headers.set(UserAgent::new("sbanken-cli/0.3.0"));
         headers.set(ContentType::json());
         headers.set(Authorization(Bearer { token }));
+        headers.set_raw("customerId", self.credentials.customer_id.to_string());
 
         return headers;
     }
 
     pub fn get_request(
+        &self,
         url: Url,
-        credentials: &Credentials,
         params: Option<HashMap<&str, String>>,
     ) -> Result<Response, Error> {
-        let token: AccessToken = Authorize::get_access_token(credentials)?;
+        let token: AccessToken = self.get_access_token()?;
 
-        let headers = Authorize::construct_headers(token.access_token);
+        let headers: Headers = self.construct_headers(token.access_token);
 
         let client = Client::builder().default_headers(headers).build()?;
 
@@ -60,12 +71,12 @@ impl Authorize {
     }
 
     pub fn post_request(
+        &self,
         url: Url,
-        credentials: &Credentials,
         object: impl Serialize,
     ) -> Result<Response, Error> {
-        let token: AccessToken = Authorize::get_access_token(credentials)?;
-        let headers = Authorize::construct_headers(token.access_token);
+        let token: AccessToken = self.get_access_token()?;
+        let headers = self.construct_headers(token.access_token);
 
         let client = Client::builder().default_headers(headers).build().unwrap();
 

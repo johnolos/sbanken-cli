@@ -1,5 +1,5 @@
 pub mod bank;
-pub mod common;
+pub mod authorize;
 pub mod credentials;
 pub mod customers;
 pub mod entities;
