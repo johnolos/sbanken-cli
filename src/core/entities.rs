@@ -48,7 +48,7 @@ pub struct MultipleItems<T> {
 impl<T: fmt::Display> fmt::Display for MultipleItems<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for object in &self.items {
-            write!(f, "{}\n\n", object)?;
+            writeln!(f, "{}\n", object)?;
         }
         Ok(())
     }
@@ -113,18 +113,18 @@ pub struct CustomerObj {
 
 impl fmt::Display for CustomerObj {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
+        writeln!(
             f,
             "\
              First name:\t{}\n\
              Last name:\t{}\n\
              Email:\t\t{}\n\
-             Phone numbers:\n",
+             Phone numbers:",
             self.first_name, self.last_name, self.email_address
         )?;
 
         for number in &self.phone_numbers {
-            write!(f, "{:}\n", number)?;
+            writeln!(f, "{:}", number)?;
         }
 
         Ok(())

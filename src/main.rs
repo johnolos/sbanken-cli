@@ -1,31 +1,36 @@
+extern crate chrono;
 extern crate clap;
 extern crate hyper;
+extern crate regex;
 extern crate reqwest;
 extern crate serde;
-extern crate serde_json;
 #[macro_use]
 extern crate serde_derive;
-extern crate chrono;
+extern crate serde_json;
 extern crate termion;
+#[macro_use]
+extern crate text_io;
 extern crate time;
 extern crate url;
 
 use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use clap::{App, Shell};
+use core::authorize::Authorize;
 use core::bank::BankAPI;
 use core::credentials::Credentials;
-use core::authorize::Authorize;
 use core::customers::CustomersAPI;
-use core::entities::{Accounts, Transactions, TransferRequest};
-use core::error::CliError;
+use core::entities::{AccountObj, Accounts, Transactions, TransferRequest};
+use core::error::Error;
+use core::interactive::{fuzzy_match_account, remove_account};
 use std::env;
+use std::io;
 use termion::{color, style};
 use time::Duration;
 
 mod cli;
 mod core;
 
-fn main() -> Result<(), CliError> {
+fn main() -> Result<(), Error> {
     let app: App = cli::build_cli();
 
     let matches = app.get_matches();
@@ -63,56 +68,51 @@ fn main() -> Result<(), CliError> {
     let secret: String = match env::var("SBANKEN_SECRET") {
         Ok(secret) => secret,
         Err(_) => {
-            return Err(CliError::new("env SBANKEN_SECRET was missing", color));
+            return Err(Error::EnvMissing("SBANKEN_SECRET"));
         }
     };
 
     let client_id: String = match env::var("SBANKEN_CLIENT_ID") {
         Ok(client_id) => client_id,
         Err(_) => {
-            return Err(CliError::new("env SBANKEN_CLIENT_ID was missing{}", color));
+            return Err(Error::EnvMissing("SBANKEN_CLIENT_ID"));
         }
     };
 
     let customer_id: String = match env::var("SBANKEN_CUSTOMER_ID") {
         Ok(customer_id) => customer_id,
         Err(_) => {
-            return Err(CliError::new("env SBANKEN_CUSTOMER_ID was missing", color));
+            return Err(Error::EnvMissing("SBANKEN_CUSTOMER_ID"));
         }
     };
 
-    let ref credentials = Credentials::new(secret, client_id, customer_id);
+    let credentials = &Credentials::new(secret, client_id, customer_id);
 
-    let ref authorize = Authorize::new(credentials);
+    let authorize = &Authorize::new(credentials);
 
-    let ref bank_api = BankAPI::new(authorize);
+    let bank_api = &BankAPI::new(authorize);
 
-    let ref customer_api = CustomersAPI::new(authorize);
+    let customer_api = &CustomersAPI::new(authorize);
 
     if let Some(matches) = matches.subcommand_matches("account") {
         if let Some(account_number) = matches.value_of("account") {
             let account = match bank_api.get_account(account_number) {
                 Ok(response) => response,
-                Err(_) => {
-                    return Err(CliError::new(
-                        "an error occurred while trying to retrieve account information",
-                        color,
-                    ))
-                }
+                Err(err) => return Err(Error::Reqwest(err))
             };
 
             println!("{:}", account);
         } else {
             let response: Accounts = match bank_api.get_accounts() {
                 Ok(response) => response,
-                Err(_) => {
-                    return Err(CliError::new(
-                        "an error occurred while trying to retrieve account information",
-                        color,
-                    ))
-                }
+                Err(err) => return Err(Error::Reqwest(err))
             };
 
+            if matches.is_present("interactive") {
+                let account = fuzzy_match_account(&response.items, "Select account")?;
+
+                println!("{:}", account);
+            }
             if matches.is_present("list") {
                 for account in response.items {
                     println!("{}\t\t[nr: {}]", account.name, account.account_number);
@@ -126,7 +126,7 @@ fn main() -> Result<(), CliError> {
     if let Some(_matches) = matches.subcommand_matches("customer") {
         let customer = match customer_api.get_customer() {
             Ok(customer) => customer,
-            Err(_) => return Err(CliError::new("unable to contact the customer api", color)),
+            Err(err) => return Err(Error::Reqwest(err)),
         };
 
         println!("{:}", customer);
@@ -136,90 +136,88 @@ fn main() -> Result<(), CliError> {
         let account = match matches.value_of("account") {
             Some(account) => account,
             None => {
-                return Err(CliError::new("account wasn't parsable{}", color));
+                return Err(Error::Parsable("account wasn't parsable"));
             }
         };
 
         let length: i32 = match matches.value_of("length") {
             Some(length) => match length.parse::<i32>() {
                 Ok(integer) => integer,
-                Err(_) => {
-                    return Err(CliError::new(
-                        "given value for length couldn't be parsed to integer",
-                        color,
-                    ));
-                }
+                Err(_) => return Err(Error::Parsable("given value for length couldn't be parsed to integer"))
             },
             None => 20,
         };
 
         let end_date: DateTime<Utc> = match matches.value_of("to") {
-            Some(end_date) => match NaiveDate::parse_from_str(end_date, "%Y-%m-%d") {
-                Ok(valid_date) => Utc.from_utc_date(&valid_date).and_hms(23, 59, 59),
-                Err(_) => {
-                    return Err(CliError::new(
-                        "given value for end_date couldn't be parsed to a UTC date",
-                        color,
-                    ));
-                }
-            },
+            Some(end_date) => Utc.from_utc_date(&NaiveDate::parse_from_str(end_date, "%Y-%m-%d")?).and_hms(23, 59, 59),
             None => Utc::now(),
         };
 
         let start_date: DateTime<Utc> = match matches.value_of("from") {
-            Some(to_date) => match NaiveDate::parse_from_str(to_date, "%Y-%m-%d") {
-                Ok(valid_date) => Utc.from_utc_date(&valid_date).and_hms(0, 0, 0),
-                Err(_) => {
-                    return Err(CliError::new(
-                        "given value for end_date couldn't be parsed to a UTC date",
-                        color,
-                    ));
-                }
-            },
+            Some(to_date) => Utc.from_utc_date(&NaiveDate::parse_from_str(to_date, "%Y-%m-%d")?).and_hms(0, 0, 0),
             None => end_date - Duration::days(30),
         };
 
         if end_date < start_date {
-            return Err(CliError::new("end_date was earlier than start date", color));
+            return Err(Error::Message("end_date was earlier than start date"));
         }
 
-        let transactions: Transactions =
-            match bank_api.get_transactions(account, length, start_date, end_date) {
-                Ok(success) => success,
-                Err(_) => return Err(CliError::new("couldn't retrieve transactions", color)),
-            };
+        let transactions: Transactions = bank_api.get_transactions(account, length, start_date, end_date)?;
 
         println!("{:}", transactions);
     }
 
     if let Some(matches) = matches.subcommand_matches("transfer") {
-        let from_account_id: String = match matches.value_of("from") {
-            Some(account) => account.to_string(),
-            None => return Err(CliError::new("missing from argument", color)),
-        };
+        let from_account_id: String;
+        let to_account_id: String;
+        let amount: f32;
+        let message: String;
 
-        let to_account_id: String = match matches.value_of("to") {
-            Some(account) => account.to_string(),
-            None => return Err(CliError::new("missing to argument", color)),
-        };
+        if matches.is_present("interactive") {
 
-        let amount: f32 = match matches.value_of("amount") {
-            Some(amount) => match amount.parse::<f32>() {
-                Ok(amount) => amount,
-                Err(_) => {
-                    return Err(CliError::new(
-                        "given value for amount couldn't be parsed to a float value",
-                        color,
-                    ));
-                }
-            },
-            None => return Err(CliError::new("missing amount argument", color)),
-        };
+            let mut response: Accounts = bank_api.get_accounts()?;
 
-        let message: String = match matches.value_of("message") {
-            Some(message) => message.to_string(),
-            None => return Err(CliError::new("missing message argument", color)),
-        };
+            let accounts: &mut Vec<AccountObj> = &mut response.items;
+
+            from_account_id = fuzzy_match_account(&accounts, "Select from_account")?
+                .account_id.to_string();
+
+            remove_account(accounts, &from_account_id);
+
+            to_account_id = fuzzy_match_account(&accounts, "Select to_account")?
+                .account_id.to_string();
+
+            println!("Amount: ");
+            amount = read!("{}\n");
+
+            println!("Message: ");
+            message = read!("{}\n");
+        } else {
+            from_account_id = match matches.value_of("from") {
+                Some(value) => value.to_string(),
+                None => return Err(Error::ArgumentMissing("from"))
+            };
+
+            to_account_id = match matches.value_of("to") {
+                Some(value) => value.to_string(),
+                None => return Err(Error::ArgumentMissing("to"))
+            };
+
+            amount = match matches.value_of("amount") {
+                Some(amount) => match amount.parse::<f32>() {
+                    Ok(amount) => amount,
+                    Err(_) => {
+                        return Err(Error::Parsable("amount couldn't be parsed to a float value"));
+                    }
+                },
+                None => return Err(Error::ArgumentMissing("amount")),
+            };
+
+            message = match matches.value_of("message") {
+                Some(value) => value.to_string(),
+                None => return Err(Error::ArgumentMissing("message"))
+            };
+        }
 
         let transfer = TransferRequest {
             from_account_id,
@@ -228,30 +226,20 @@ fn main() -> Result<(), CliError> {
             amount,
         };
 
-        let transfer = match bank_api.post_transfer(transfer) {
-            Ok(transfer) => transfer,
-            Err(_) => return Err(CliError::new("couldn't transfer money", color)),
-        };
+        let transfer = bank_api.post_transfer(&transfer)?;
 
         if transfer.is_error {
-            match transfer.error_message {
-                Some(msg) => {
-                    return Err(CliError::new(&msg, color));
-                }
-                None => {
-                    return Err(CliError::new("couldn't perform your transfer", color));
-                }
-            }
+            return Err(Error::Message("couldn't perform your transfer"));
+        }
+
+        if color {
+            println!(
+                "{}Your transfer was successfully executed.{}",
+                color::Fg(color::Green),
+                style::Reset
+            )
         } else {
-            if color {
-                println!(
-                    "{}Your transfer was successfully executed.{}",
-                    color::Fg(color::Green),
-                    style::Reset
-                )
-            } else {
-                println!("Your transfer was successfully executed.")
-            }
+            println!("Your transfer was successfully executed.")
         }
     }
 

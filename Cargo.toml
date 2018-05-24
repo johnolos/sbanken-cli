@@ -14,3 +14,5 @@ url = '*'
 termion = '*'
 chrono = { version = '*', features = ["serde"] }
 time = '*'
+regex = '1.0.0'
+text_io = '*'

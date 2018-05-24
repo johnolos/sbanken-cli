@@ -73,18 +73,18 @@ function sbanken-cli
 end
 ```
 
-##### Moving forward
-In time there might be a interactive mode, but for now you can very much tailor one for your use-case:
+### Interactive mode
+For the time being `sbanken-cli` have interactive mode for two sub-commands.
 
-For example:
-```fish
-function transfer
-	set from_account (sbanken-cli account -l  | fzf --prompt="From account: " | awk '{print $(NF)}' | sed 's/\]//g')
-	sbanken-cli account -l | fzf -1 -q "$from_account" | xargs echo "From account: "
-	set to_account (sbanken-cli account -l  | fzf --prompt="To account: " | awk '{print $(NF)}' | sed 's/\]//g')
-	sbanken-cli account -l | fzf -1 -q "$to_account" | xargs echo "To account: "
-	read --prompt "echo 'Amount: '" -l amount
-	read --prompt "echo 'Message: '" -l message
-	sbanken-cli transfer -f "$from_account" -t "$to_account" -a "$amount" -m "$message"
-end
+```bash
+$ sbanken-cli transfer -i
+$ sbanken-cli account -i
 ```
+The interactive mode spawns a sub-process of a fuzzy-matcher and lets you select your choice of the ones available.
+
+Currently, hard-dependency of `fzf` (fuzzy-matching), but it can be done with any fuzzy-matcher that
+takes in options in form of lines on stdin and outputs the selected option/line on stdout.
+
+For instructions to install `fzf` click [here](https://github.com/junegunn/fzf).
+
+Make a PR if you would like anything other than `fzf` supported.

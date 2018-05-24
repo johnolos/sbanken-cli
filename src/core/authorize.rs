@@ -5,8 +5,8 @@ use reqwest::{Client, Error, Response};
 use serde::Serialize;
 use serde_json;
 use std::collections::HashMap;
-use url::Url;
 use url::form_urlencoded::byte_serialize;
+use url::Url;
 
 pub struct Authorize<'a> {
     pub credentials: &'a Credentials,
@@ -32,13 +32,13 @@ impl<'a> Authorize<'a> {
             password
         }));
 
-        let client = Client::builder().default_headers(headers).build().unwrap();
+        let client = Client::builder().default_headers(headers).build()?;
         let mut response = client
             .post(Authorize::IDENTITY_SERVER_URL)
             .body("grant_type=client_credentials")
             .send()?;
 
-        return response.json::<AccessToken>();
+        response.json::<AccessToken>()
     }
 
     fn construct_headers(&self, token: String) -> Headers {
@@ -49,7 +49,7 @@ impl<'a> Authorize<'a> {
         headers.set(Authorization(Bearer { token }));
         headers.set_raw("customerId", self.credentials.customer_id.to_string());
 
-        return headers;
+        headers
     }
 
     pub fn get_request(
@@ -67,7 +67,7 @@ impl<'a> Authorize<'a> {
             return client.get(url).query(&params).send();
         }
 
-        return client.get(url).send();
+        client.get(url).send()
     }
 
     pub fn post_request(
@@ -78,11 +78,11 @@ impl<'a> Authorize<'a> {
         let token: AccessToken = self.get_access_token()?;
         let headers = self.construct_headers(token.access_token);
 
-        let client = Client::builder().default_headers(headers).build().unwrap();
+        let client = Client::builder().default_headers(headers).build()?;
 
-        return client
+        client
             .post(url)
             .body(serde_json::to_string(&object).unwrap())
-            .send();
+            .send()
     }
 }
