@@ -14,6 +14,7 @@ use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use clap::{App, Shell};
 use core::bank::BankAPI;
 use core::credentials::Credentials;
+use core::authorize::Authorize;
 use core::customers::CustomersAPI;
 use core::entities::{Accounts, Transactions, TransferRequest};
 use core::error::CliError;
@@ -82,9 +83,15 @@ fn main() -> Result<(), CliError> {
 
     let ref credentials = Credentials::new(secret, client_id, customer_id);
 
+    let ref authorize = Authorize::new(credentials);
+
+    let ref bank_api = BankAPI::new(authorize);
+
+    let ref customer_api = CustomersAPI::new(authorize);
+
     if let Some(matches) = matches.subcommand_matches("account") {
         if let Some(account_number) = matches.value_of("account") {
-            let account = match BankAPI::get_account(credentials, account_number) {
+            let account = match bank_api.get_account(account_number) {
                 Ok(response) => response,
                 Err(_) => {
                     return Err(CliError::new(
@@ -96,11 +103,11 @@ fn main() -> Result<(), CliError> {
 
             println!("{:}", account);
         } else {
-            let response: Accounts = match BankAPI::get_accounts(credentials) {
+            let response: Accounts = match bank_api.get_accounts() {
                 Ok(response) => response,
                 Err(_) => {
                     return Err(CliError::new(
-                        "an error occurred while trying to retrieve accounts",
+                        "an error occurred while trying to retrieve account information",
                         color,
                     ))
                 }
@@ -117,7 +124,7 @@ fn main() -> Result<(), CliError> {
     }
 
     if let Some(_matches) = matches.subcommand_matches("customer") {
-        let customer = match CustomersAPI::get_customer(credentials) {
+        let customer = match customer_api.get_customer() {
             Ok(customer) => customer,
             Err(_) => return Err(CliError::new("unable to contact the customer api", color)),
         };
@@ -177,7 +184,7 @@ fn main() -> Result<(), CliError> {
         }
 
         let transactions: Transactions =
-            match BankAPI::get_transactions(credentials, account, length, start_date, end_date) {
+            match bank_api.get_transactions(account, length, start_date, end_date) {
                 Ok(success) => success,
                 Err(_) => return Err(CliError::new("couldn't retrieve transactions", color)),
             };
@@ -186,12 +193,12 @@ fn main() -> Result<(), CliError> {
     }
 
     if let Some(matches) = matches.subcommand_matches("transfer") {
-        let from_account: String = match matches.value_of("from") {
+        let from_account_id: String = match matches.value_of("from") {
             Some(account) => account.to_string(),
             None => return Err(CliError::new("missing from argument", color)),
         };
 
-        let to_account: String = match matches.value_of("to") {
+        let to_account_id: String = match matches.value_of("to") {
             Some(account) => account.to_string(),
             None => return Err(CliError::new("missing to argument", color)),
         };
@@ -215,13 +222,13 @@ fn main() -> Result<(), CliError> {
         };
 
         let transfer = TransferRequest {
-            from_account,
-            to_account,
+            from_account_id,
+            to_account_id,
             message,
             amount,
         };
 
-        let transfer = match BankAPI::post_transfer(credentials, transfer) {
+        let transfer = match bank_api.post_transfer(transfer) {
             Ok(transfer) => transfer,
             Err(_) => return Err(CliError::new("couldn't transfer money", color)),
         };
