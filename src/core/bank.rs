@@ -19,7 +19,7 @@ impl<'a> BankAPI<'a> {
 
         let mut response: Response = self.authorize.get_request(url, None)?;
 
-        return response.json::<Accounts>();
+        response.json::<Accounts>()
     }
 
     pub fn get_account(&self, account: &str) -> Result<Account, Error> {
@@ -30,7 +30,7 @@ impl<'a> BankAPI<'a> {
 
         let mut response: Response = self.authorize.get_request(url, None)?;
 
-        return response.json::<Account>();
+        response.json::<Account>()
     }
 
     pub fn get_transactions(
@@ -58,17 +58,17 @@ impl<'a> BankAPI<'a> {
 
         let mut response: Response = self.authorize.get_request(url, Some(params))?;
 
-        return response.json::<Transactions>();
+        response.json::<Transactions>()
     }
 
     pub fn post_transfer(
         &self,
-        transfer: TransferRequest,
+        transfer: &TransferRequest,
     ) -> Result<TransferResponse, Error> {
         let url = Url::parse("https://api.sbanken.no/bank/api/v1/transfers").unwrap();
 
-        let mut response: Response = self.authorize.post_request(url, &transfer)?;
+        let mut response: Response = self.authorize.post_request(url, transfer)?;
 
-        return response.json::<TransferResponse>();
+        response.json::<TransferResponse>()
     }
 }

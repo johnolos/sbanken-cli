@@ -1,4 +1,4 @@
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg, ArgGroup, SubCommand};
 
 pub fn build_cli() -> App<'static, 'static> {
     App::new("sbanken-cli")
@@ -27,6 +27,13 @@ pub fn build_cli() -> App<'static, 'static> {
                         .required(false)
                         .help("Retrieve details for a specified account")
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("interactive")
+                        .short("i")
+                        .long("interactive")
+                        .required(false)
+                        .help("Interactively select which account to details")
                 )
                 .arg(
                     Arg::with_name("list")
@@ -86,37 +93,49 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(
             SubCommand::with_name("transfer")
                 .about("Transfer between your accounts")
-                .arg(
-                    Arg::with_name("from")
-                        .short("f")
-                        .long("from")
-                        .required(true)
-                        .takes_value(true)
-                        .help("From account you want to withdraw money from"),
-                )
-                .arg(
-                    Arg::with_name("to")
-                        .short("t")
-                        .long("to")
-                        .required(true)
-                        .takes_value(true)
-                        .help("To account you want to deposit money into"),
-                )
+                .groups(&[
+                    ArgGroup::with_name("manual_mode")
+                        .args(&["amount", "from", "message", "to"])
+                        .conflicts_with("interactive")
+                        .multiple(true)
+                        .requires_all(&["amount", "from", "message", "to"]),
+                    ArgGroup::with_name("interactive_mode")
+                        .arg("interactive")
+                ])
                 .arg(
                     Arg::with_name("amount")
                         .short("a")
                         .long("amount")
-                        .required(true)
                         .takes_value(true)
                         .help("Amount to transfer between accounts"),
+                )
+                .arg(
+                    Arg::with_name("from")
+                        .short("f")
+                        .long("from")
+                        .takes_value(true)
+                        .help("From account you want to withdraw money from"),
+                )
+                .arg(
+                    Arg::with_name("interactive")
+                        .short("i")
+                        .long("interactive")
+                        .required(false)
+                        .help("Interactively select accounts to transfer")
                 )
                 .arg(
                     Arg::with_name("message")
                         .short("m")
                         .long("message")
-                        .required(true)
                         .takes_value(true)
                         .help("Message to be recorded"),
+                )
+                .arg(
+                    Arg::with_name("to")
+                        .short("t")
+                        .long("to")
+                        .takes_value(true)
+                        .help("To account you want to deposit money into"),
                 )
                 .display_order(4),
         )

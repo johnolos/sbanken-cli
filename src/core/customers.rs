@@ -17,6 +17,6 @@ impl<'a> CustomersAPI<'a> {
 
         let mut response: Response = self.authorize.get_request(url, None)?;
 
-        return response.json::<Customer>();
+        response.json::<Customer>()
     }
 }
