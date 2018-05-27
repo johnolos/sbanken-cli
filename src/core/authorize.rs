@@ -1,3 +1,4 @@
+use cli::VERSION;
 use core::credentials::Credentials;
 use core::entities::AccessToken;
 use hyper::header::{Accept, Authorization, Basic, Bearer, ContentType, Headers, UserAgent};
@@ -24,7 +25,7 @@ impl<'a> Authorize<'a> {
         let password: Option<String> = Some(byte_serialize(self.credentials.secret.as_bytes()).collect());
 
         let mut headers = Headers::new();
-        headers.set(UserAgent::new("sbanken-cli/0.3.0"));
+        headers.set(UserAgent::new(format!("sbanken-cli/{}", VERSION)));
         headers.set(Accept::json());
         headers.set(ContentType::form_url_encoded());
         headers.set(Authorization(Basic {
@@ -43,8 +44,7 @@ impl<'a> Authorize<'a> {
 
     fn construct_headers(&self, token: String) -> Headers {
         let mut headers = Headers::new();
-
-        headers.set(UserAgent::new("sbanken-cli/0.3.0"));
+        headers.set(UserAgent::new(format!("sbanken-cli/{}", VERSION)));
         headers.set(ContentType::json());
         headers.set(Authorization(Bearer { token }));
         headers.set_raw("customerId", self.credentials.customer_id.to_string());

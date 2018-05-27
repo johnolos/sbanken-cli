@@ -133,13 +133,6 @@ fn main() -> Result<(), Error> {
     }
 
     if let Some(matches) = matches.subcommand_matches("transaction") {
-        let account = match matches.value_of("account") {
-            Some(account) => account,
-            None => {
-                return Err(Error::Parsable("account wasn't parsable"));
-            }
-        };
-
         let length: i32 = match matches.value_of("length") {
             Some(length) => match length.parse::<i32>() {
                 Ok(integer) => integer,
@@ -162,7 +155,26 @@ fn main() -> Result<(), Error> {
             return Err(Error::Message("end_date was earlier than start date"));
         }
 
-        let transactions: Transactions = bank_api.get_transactions(account, length, start_date, end_date)?;
+        let account: String;
+
+        if matches.is_present("interactive") {
+            let mut response: Accounts = bank_api.get_accounts()?;
+
+            let accounts: &mut Vec<AccountObj> = &mut response.items;
+
+            account = fuzzy_match_account(&accounts, "Select from_account")?
+                .account_id.to_string();
+
+        } else {
+            account = match matches.value_of("account") {
+                Some(account) => account.to_string(),
+                None => {
+                    return Err(Error::Parsable("account wasn't parsable"));
+                }
+            };
+        }
+
+        let transactions: Transactions = bank_api.get_transactions(&account, length, start_date, end_date)?;
 
         println!("{:}", transactions);
     }

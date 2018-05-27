@@ -1,8 +1,10 @@
 use clap::{App, Arg, ArgGroup, SubCommand};
 
+pub const VERSION: &str = "0.4.0";
+
 pub fn build_cli() -> App<'static, 'static> {
     App::new("sbanken-cli")
-        .version("0.3.0")
+        .version(VERSION)
         .about("Your personal bank right in your favorite terminal")
         .author("John-Olav Storvold")
         .arg(
@@ -20,6 +22,11 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(
             SubCommand::with_name("account")
                 .about("See account details")
+                .group(
+                    ArgGroup::with_name("mode")
+                        .args(&["account", "interactive"])
+                        .required(false),
+                )
                 .arg(
                     Arg::with_name("account")
                         .short("a")
@@ -52,11 +59,19 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(
             SubCommand::with_name("transaction")
                 .about("See transactions made on your accounts")
+                .groups(&[
+                    ArgGroup::with_name("mode")
+                        .args(&["account", "interactive"])
+                        .required(true),
+                    ArgGroup::with_name("optional_args")
+                        .args(&["from", "to", "length"])
+                        .multiple(true)
+                        .requires("mode")
+                ])
                 .arg(
                     Arg::with_name("account")
                         .short("a")
                         .long("account")
-                        .required(true)
                         .help("List transactions made on your account")
                         .takes_value(true),
                 )
@@ -69,6 +84,13 @@ pub fn build_cli() -> App<'static, 'static> {
                              Defaults to current time and date minus 30 days.",
                         )
                         .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("interactive")
+                        .short("i")
+                        .long("interactive")
+                        .required(false)
+                        .help("Interactively select accounts to transfer")
                 )
                 .arg(
                     Arg::with_name("to")
@@ -93,20 +115,14 @@ pub fn build_cli() -> App<'static, 'static> {
         .subcommand(
             SubCommand::with_name("transfer")
                 .about("Transfer between your accounts")
-                .groups(&[
-                    ArgGroup::with_name("manual_mode")
-                        .args(&["amount", "from", "message", "to"])
-                        .conflicts_with("interactive")
-                        .multiple(true)
-                        .requires_all(&["amount", "from", "message", "to"]),
-                    ArgGroup::with_name("interactive_mode")
-                        .arg("interactive")
-                ])
                 .arg(
                     Arg::with_name("amount")
                         .short("a")
                         .long("amount")
                         .takes_value(true)
+                        .required(true)
+                        .requires_all(&["from", "message", "to"])
+                        .conflicts_with("interactive")
                         .help("Amount to transfer between accounts"),
                 )
                 .arg(
@@ -114,20 +130,26 @@ pub fn build_cli() -> App<'static, 'static> {
                         .short("f")
                         .long("from")
                         .takes_value(true)
+                        .required(true)
+                        .requires_all(&["amount", "message", "to"])
+                        .conflicts_with("interactive")
                         .help("From account you want to withdraw money from"),
                 )
                 .arg(
                     Arg::with_name("interactive")
                         .short("i")
                         .long("interactive")
-                        .required(false)
-                        .help("Interactively select accounts to transfer")
+                        .conflicts_with_all(&["amount", "from", "message", "to"])
+                        .help("Interactively select accounts to transfer"),
                 )
                 .arg(
                     Arg::with_name("message")
                         .short("m")
                         .long("message")
                         .takes_value(true)
+                        .required(true)
+                        .requires_all(&["amount", "from", "to"])
+                        .conflicts_with("interactive")
                         .help("Message to be recorded"),
                 )
                 .arg(
@@ -135,6 +157,9 @@ pub fn build_cli() -> App<'static, 'static> {
                         .short("t")
                         .long("to")
                         .takes_value(true)
+                        .required(true)
+                        .requires_all(&["amount", "from", "message"])
+                        .conflicts_with("interactive")
                         .help("To account you want to deposit money into"),
                 )
                 .display_order(4),
