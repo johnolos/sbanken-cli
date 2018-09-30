@@ -22,16 +22,14 @@ impl<'a> Authorize<'a> {
 
     fn get_access_token(&self) -> Result<AccessToken, Error> {
         let username: String = byte_serialize(self.credentials.client_id.as_bytes()).collect();
-        let password: Option<String> = Some(byte_serialize(self.credentials.secret.as_bytes()).collect());
+        let password: Option<String> =
+            Some(byte_serialize(self.credentials.secret.as_bytes()).collect());
 
         let mut headers = Headers::new();
         headers.set(UserAgent::new(format!("sbanken-cli/{}", VERSION)));
         headers.set(Accept::json());
         headers.set(ContentType::form_url_encoded());
-        headers.set(Authorization(Basic {
-            username,
-            password
-        }));
+        headers.set(Authorization(Basic { username, password }));
 
         let client = Client::builder().default_headers(headers).build()?;
         let mut response = client
@@ -70,11 +68,7 @@ impl<'a> Authorize<'a> {
         client.get(url).send()
     }
 
-    pub fn post_request(
-        &self,
-        url: Url,
-        object: impl Serialize,
-    ) -> Result<Response, Error> {
+    pub fn post_request(&self, url: Url, object: impl Serialize) -> Result<Response, Error> {
         let token: AccessToken = self.get_access_token()?;
         let headers = self.construct_headers(token.access_token);
 

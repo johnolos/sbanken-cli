@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use url::Url;
 
 pub struct BankAPI<'a> {
-    authorize: &'a Authorize<'a>
+    authorize: &'a Authorize<'a>,
 }
 
 impl<'a> BankAPI<'a> {
@@ -26,7 +26,8 @@ impl<'a> BankAPI<'a> {
         let url = Url::parse(&format!(
             "https://api.sbanken.no/bank/api/v1/accounts/{}/",
             account
-        )).unwrap();
+        ))
+        .unwrap();
 
         let mut response: Response = self.authorize.get_request(url, None)?;
 
@@ -43,7 +44,8 @@ impl<'a> BankAPI<'a> {
         let url = Url::parse(&format!(
             "https://api.sbanken.no/bank/api/v1/transactions/{}",
             account
-        )).unwrap();
+        ))
+        .unwrap();
 
         let mut params: HashMap<&str, String> = HashMap::new();
         params.insert("length", length.to_string());
@@ -61,10 +63,7 @@ impl<'a> BankAPI<'a> {
         response.json::<Transactions>()
     }
 
-    pub fn post_transfer(
-        &self,
-        transfer: &TransferRequest,
-    ) -> Result<TransferResponse, Error> {
+    pub fn post_transfer(&self, transfer: &TransferRequest) -> Result<TransferResponse, Error> {
         let url = Url::parse("https://api.sbanken.no/bank/api/v1/transfers").unwrap();
 
         let mut response: Response = self.authorize.post_request(url, transfer)?;

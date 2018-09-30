@@ -98,14 +98,14 @@ fn main() -> Result<(), Error> {
         if let Some(account_number) = matches.value_of("account") {
             let account = match bank_api.get_account(account_number) {
                 Ok(response) => response,
-                Err(err) => return Err(Error::Reqwest(err))
+                Err(err) => return Err(Error::Reqwest(err)),
             };
 
             println!("{:}", account);
         } else {
             let response: Accounts = match bank_api.get_accounts() {
                 Ok(response) => response,
-                Err(err) => return Err(Error::Reqwest(err))
+                Err(err) => return Err(Error::Reqwest(err)),
             };
 
             if matches.is_present("interactive") {
@@ -136,18 +136,26 @@ fn main() -> Result<(), Error> {
         let length: i32 = match matches.value_of("length") {
             Some(length) => match length.parse::<i32>() {
                 Ok(integer) => integer,
-                Err(_) => return Err(Error::Parsable("given value for length couldn't be parsed to integer"))
+                Err(_) => {
+                    return Err(Error::Parsable(
+                        "given value for length couldn't be parsed to integer",
+                    ))
+                }
             },
             None => 20,
         };
 
         let end_date: DateTime<Utc> = match matches.value_of("to") {
-            Some(end_date) => Utc.from_utc_date(&NaiveDate::parse_from_str(end_date, "%Y-%m-%d")?).and_hms(23, 59, 59),
+            Some(end_date) => Utc
+                .from_utc_date(&NaiveDate::parse_from_str(end_date, "%Y-%m-%d")?)
+                .and_hms(23, 59, 59),
             None => Utc::now(),
         };
 
         let start_date: DateTime<Utc> = match matches.value_of("from") {
-            Some(to_date) => Utc.from_utc_date(&NaiveDate::parse_from_str(to_date, "%Y-%m-%d")?).and_hms(0, 0, 0),
+            Some(to_date) => Utc
+                .from_utc_date(&NaiveDate::parse_from_str(to_date, "%Y-%m-%d")?)
+                .and_hms(0, 0, 0),
             None => end_date - Duration::days(30),
         };
 
@@ -163,8 +171,8 @@ fn main() -> Result<(), Error> {
             let accounts: &mut Vec<AccountObj> = &mut response.items;
 
             account = fuzzy_match_account(&accounts, "Select from_account")?
-                .account_id.to_string();
-
+                .account_id
+                .to_string();
         } else {
             account = match matches.value_of("account") {
                 Some(account) => account.to_string(),
@@ -174,7 +182,8 @@ fn main() -> Result<(), Error> {
             };
         }
 
-        let transactions: Transactions = bank_api.get_transactions(&account, length, start_date, end_date)?;
+        let transactions: Transactions =
+            bank_api.get_transactions(&account, length, start_date, end_date)?;
 
         println!("{:}", transactions);
     }
@@ -186,18 +195,19 @@ fn main() -> Result<(), Error> {
         let message: String;
 
         if matches.is_present("interactive") {
-
             let mut response: Accounts = bank_api.get_accounts()?;
 
             let accounts: &mut Vec<AccountObj> = &mut response.items;
 
             from_account_id = fuzzy_match_account(&accounts, "Select from_account")?
-                .account_id.to_string();
+                .account_id
+                .to_string();
 
             remove_account(accounts, &from_account_id);
 
             to_account_id = fuzzy_match_account(&accounts, "Select to_account")?
-                .account_id.to_string();
+                .account_id
+                .to_string();
 
             println!("Amount: ");
             amount = read!("{}\n");
@@ -207,19 +217,21 @@ fn main() -> Result<(), Error> {
         } else {
             from_account_id = match matches.value_of("from") {
                 Some(value) => value.to_string(),
-                None => return Err(Error::ArgumentMissing("from"))
+                None => return Err(Error::ArgumentMissing("from")),
             };
 
             to_account_id = match matches.value_of("to") {
                 Some(value) => value.to_string(),
-                None => return Err(Error::ArgumentMissing("to"))
+                None => return Err(Error::ArgumentMissing("to")),
             };
 
             amount = match matches.value_of("amount") {
                 Some(amount) => match amount.parse::<f32>() {
                     Ok(amount) => amount,
                     Err(_) => {
-                        return Err(Error::Parsable("amount couldn't be parsed to a float value"));
+                        return Err(Error::Parsable(
+                            "amount couldn't be parsed to a float value",
+                        ));
                     }
                 },
                 None => return Err(Error::ArgumentMissing("amount")),
@@ -227,7 +239,7 @@ fn main() -> Result<(), Error> {
 
             message = match matches.value_of("message") {
                 Some(value) => value.to_string(),
-                None => return Err(Error::ArgumentMissing("message"))
+                None => return Err(Error::ArgumentMissing("message")),
             };
         }
 

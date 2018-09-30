@@ -40,7 +40,7 @@ pub fn build_cli() -> App<'static, 'static> {
                         .short("i")
                         .long("interactive")
                         .required(false)
-                        .help("Interactively select which account to details")
+                        .help("Interactively select which account to details"),
                 )
                 .arg(
                     Arg::with_name("list")
@@ -66,7 +66,7 @@ pub fn build_cli() -> App<'static, 'static> {
                     ArgGroup::with_name("optional_args")
                         .args(&["from", "to", "length"])
                         .multiple(true)
-                        .requires("mode")
+                        .requires("mode"),
                 ])
                 .arg(
                     Arg::with_name("account")
@@ -90,7 +90,7 @@ pub fn build_cli() -> App<'static, 'static> {
                         .short("i")
                         .long("interactive")
                         .required(false)
-                        .help("Interactively select accounts to transfer")
+                        .help("Interactively select accounts to transfer"),
                 )
                 .arg(
                     Arg::with_name("to")

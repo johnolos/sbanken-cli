@@ -13,7 +13,7 @@ pub enum Error {
     NoAccountFound(&'static str),
     EnvMissing(&'static str),
     Parsable(&'static str),
-    Message(&'static str)
+    Message(&'static str),
 }
 
 impl error::Error for Error {
@@ -41,12 +41,10 @@ impl error::Error for Error {
             Error::NoAccountFound(ref _err) => None,
             Error::EnvMissing(ref _err) => None,
             Error::Parsable(ref _err) => None,
-            Error::Message(ref _err) => None
+            Error::Message(ref _err) => None,
         }
     }
 }
-
-
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -59,7 +57,7 @@ impl fmt::Display for Error {
             Error::NoAccountFound(ref err) => write!(f, "No account found: {}", err),
             Error::EnvMissing(ref err) => write!(f, "Error: env {} missing", err),
             Error::Parsable(ref err) => write!(f, "Parse error: {}", err),
-            Error::Message(ref err) => write!(f, "Error: {}", err)
+            Error::Message(ref err) => write!(f, "Error: {}", err),
         }
     }
 }
@@ -81,4 +79,3 @@ impl convert::From<regex::Error> for Error {
         Error::Regex(err)
     }
 }
-

@@ -183,7 +183,11 @@ impl fmt::Display for TransactionObj {
         }
         writeln!(f, "Amount:\t\t\t{}", self.amount)?;
         writeln!(f, "Description:\t\t{}", self.text)?;
-        writeln!(f, "Reserved:\t\t{}", if self.is_reservation { "Yes" } else { "No" })?;
+        writeln!(
+            f,
+            "Reserved:\t\t{}",
+            if self.is_reservation { "Yes" } else { "No" }
+        )?;
         writeln!(f, "Transaction id:\t\t{}", self.transaction_id)?;
         Ok(())
     }
